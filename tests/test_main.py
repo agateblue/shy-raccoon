@@ -75,7 +75,7 @@ import requests_mock
                 "id": "postid",
                 "visibility": "direct",
                 "account": {"id": "someone"},
-                "content": "for ?following : \nSome content\n",
+                "content": """<p><span class="h-card"><a href="https://server/@ShyRaccoon" class="u-url mention" rel="nofollow noopener noreferrer" target="_blank">@<span>ShyRaccoon</span></a></span> this is a question for ?following:</p><p>How old are you?</p>""",
                 "spoiler_text": "A content warning",
                 "mentions": [{"id": "110108208783335072"}],
             },
@@ -83,7 +83,7 @@ import requests_mock
                 "action": "forward",
                 "sender": {"id": "someone"},
                 "recipient": {"id": "following", "acct": "following"},
-                "content": "Some content",
+                "message": "How old are you?",
                 "in_reply_to_id": "postid",
                 "spoiler_text": f"{settings.DEFAULT_CONTENT_WARNING} | A content warning",
             },
@@ -98,11 +98,11 @@ def test_handle_message(payload, expected, requests_mock):
     }
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/relationships?id[]=not_following",
-        json={"followed_by": False},
+        json=[{"followed_by": False}],
     )
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/relationships?id[]=following",
-        json={"followed_by": True},
+        json=[{"followed_by": True}],
     )
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/lookup?acct=not_following",
@@ -129,12 +129,12 @@ def test_handle_message(payload, expected, requests_mock):
     [
         ("question for ?toto\n\n", None),
         ("question for ?toto\n\ncoucou  ", "coucou"),
-        ("question for ?toto\nbonjour\ncoucou  ", "bonjour\ncoucou"),
+        ("question for ?toto:\n\nbonjour\n\ncoucou  ", "bonjour\n\ncoucou"),
         ("for ?toto : \nSome content\n", "Some content"),
     ],
 )
 def test_prepare_for_forward(content, expected):
-    assert main.prepare_for_forward(content, "?toto") == expected
+    assert main.prepare_for_forward(content) == expected
 
 
 def test_handle_skip():
@@ -201,8 +201,9 @@ def test_handle_forward(requests_mock):
     forward = requests_mock.request_history[0]
     confirmation = requests_mock.request_history[1]
 
+    forward_message = settings.FORWARD_MESSAGE.format(message="hello")
     assert forward.json() == {
-        "status": f"@recipient@world hello",
+        "status": f"@recipient@world {forward_message}",
         "visibility": "direct",
         "spoiler_text": "cw",
         "in_reply_to_id": "previous",

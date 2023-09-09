@@ -106,6 +106,14 @@ def handle_message(
         return SKIP
 
     content = payload["content"]
+    # ugly HTML cleanup
+    if content.startswith("<p>"):
+        content = content[3:]
+    if content.endswith("</p>"):
+        content = content[:-4]
+    content = content.replace("</p><p>", "\n\n")
+    # end of ugly HTML cleanup
+
     words = content.split(" ")
     mentioned_username = None
     raw_username = None
@@ -137,7 +145,7 @@ def handle_message(
         server_url,
         f'/api/v1/accounts/relationships?id[]={recipient["id"]}',
         access_token=access_token,
-    )
+    )[0]
 
     if not relationship["followed_by"]:
         return reply(
@@ -151,7 +159,7 @@ def handle_message(
     if payload.get("spoiler_text"):
         spoiler_text.append(payload["spoiler_text"])
 
-    forwarded_message = prepare_for_forward(payload["content"], raw_username)
+    forwarded_message = prepare_for_forward(content)
 
     if not forwarded_message:
         return reply(
@@ -164,7 +172,7 @@ def handle_message(
         "action": "forward",
         "recipient": recipient,
         "sender": payload["account"],
-        "content": forwarded_message,
+        "message": forwarded_message,
         "spoiler_text": " | ".join(spoiler_text),
         "in_reply_to_id": payload["id"],
     }
@@ -177,20 +185,15 @@ def is_username(word):
 def clean_username(word):
     for char in [settings.MENTION_PLACEHOLDER, "?", ":", "!", ",", "(", ")"]:
         word = word.replace(char, "")
-    return word
+    return word.splitlines()[0]
 
 
-def prepare_for_forward(content, username):
-    message = content.split(username, 1)
-    if len(message) < 2:
+def prepare_for_forward(content):
+    lines = [l.strip() for l in content.splitlines() if l.strip()]
+    if len(lines) < 2:
         return
 
-    if not message[1].strip():
-        return
-    message = message[1].split("\n", 1)
-    if len(message) < 2:
-        return
-    return message[1].strip()
+    return "\n\n".join(lines[1:])
 
 
 def handle_skip(action):
@@ -214,9 +217,10 @@ def handle_reply(action):
 
 def handle_forward(action):
     # first, forward the message
+    message = settings.FORWARD_MESSAGE.format(message=action["message"])
     data = {
         "visibility": "direct",
-        "status": f'@{action["recipient"]["acct"]} {action["message"]}',
+        "status": f'@{action["recipient"]["acct"]} {message}',
         "spoiler_text": action["spoiler_text"],
         "in_reply_to_id": action.get("in_reply_to_id"),
     }

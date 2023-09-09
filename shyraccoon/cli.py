@@ -28,6 +28,7 @@ def stream():
     )
     for event in s:
         logging.info("Received event: %s", event)
+        action = None
         if event["event"] == "notification" and event["data"]["type"] == "follow":
             action = {
                 "type": "follow",
@@ -35,6 +36,17 @@ def stream():
                 "bot_data": user_data,
             }
             main.handle_follow(action)
+        if event["event"] == "notification" and event["data"]["type"] == "mention":
+            action = main.handle_message(
+                event["data"]["status"],
+                bot_data=user_data,
+                server_url=settings.SERVER_URL,
+                access_token=settings.ACCESS_TOKEN,
+            )
+        if action:
+            logging.info("Handling action %s", action)
+            handler = getattr(main, f'handle_{action["action"]}')
+            handler(action)
 
 
 if __name__ == "__main__":

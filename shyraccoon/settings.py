@@ -28,8 +28,19 @@ Give it a try yourself if you want to see how it works!
 If you want to stop receiving anonymous messages, unfollow this account. Check out my bio/pinned posts for more info.
 """,
 )
+FORWARD_MESSAGE = os.environ.get(
+    "FORWARD_MESSAGE",
+    """{message}
+
+---
+
+If you want to report it, simply reply to this message including a #report hashtag in your reply.
+
+If you don't want to receive anonymous message in the future, please unfollow this account.
+""",
+)
 DEFAULT_CONTENT_WARNING = os.environ.get(
-    "DEFAULT_CONTENT_WARNING", "You received a Shy Raccoon question"
+    "DEFAULT_CONTENT_WARNING", "You received a Shy Raccoon message"
 )
 ERROR_INVALID_ACCOUNT = os.environ.get(
     "ERROR_INVALID_ACCOUNT", "The account '{0}' does not exist."
