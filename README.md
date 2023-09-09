@@ -1,20 +1,20 @@
-A Mastodon bot to forward anonymous questions to their recipient, *à la* Curious Cat or NGL. 
+A Mastodon bot to forward anonymous messages to their recipient, *à la* Curious Cat or NGL. 
 
-# Receiving questions from Shy Raccoon
+# Receiving messages from Shy Raccoon
 
 1. Follow the Shy Raccoon account on the fediverse
-2. Instruct your followers to send their questions to the Shy Racoon account, in private message, mentioning you. 
+2. Instruct your followers to send their messages to the Shy Racoon account, in private message, mentioning you. 
 3. That's it
 
-# Sending anonymous questions using Shy Raccon
+# Sending anonymous messages using Shy Raccon
 
 1. Send a private message to the Shy Raccoon account that includes the full username of the person you want the question to be forwarded to
 2. That's it!
 
 # Safety features
 
--  ccoon is opt-in based: you need to follow the bot to start receiving anonymous messages
-- If you receive an abusive or hateful question, simply answer the bot a message that contain the word "report" (this is configurable). A human will take over to ensure this person can't reach you again, as well as reporting them if necessary.
+- Shy Raccoon is opt-in based: you need to follow the bot to start receiving anonymous messages
+- To be implemented : If you receive an abusive or hateful question, simply answer the bot a message that contain the hashtag "#report" (this is configurable). A human will take over to ensure this person can't reach you again, as well as reporting them if necessary.
 
 # Hosting your own Shy Raccoon
 

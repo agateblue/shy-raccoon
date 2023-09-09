@@ -31,7 +31,7 @@ def stream():
         action = None
         if event["event"] == "notification" and event["data"]["type"] == "follow":
             action = {
-                "type": "follow",
+                "action": "follow",
                 "sender": event["data"]["account"],
                 "bot_data": user_data,
             }
