@@ -28,6 +28,13 @@ def stream():
     )
     for event in s:
         logging.info("Received event: %s", event)
+        if event["event"] == "notification" and event["data"]["type"] == "follow":
+            action = {
+                "type": "follow",
+                "sender": event["data"]["account"],
+                "bot_data": user_data,
+            }
+            main.handle_follow(action)
 
 
 if __name__ == "__main__":

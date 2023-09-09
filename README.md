@@ -49,7 +49,7 @@ venv/bin/pip install -e '.[dev]'
 Running the project:
 
 ```bash
-export export ACCESS_TOKEN=yourtoken SERVER_URL='https://mastodon.cafe'
+export ACCESS_TOKEN=yourtoken SERVER_URL='https://mastodon.cafe'
 # launch Shy Raccoon
 venv/bin/shy-raccoon stream
 ```

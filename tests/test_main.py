@@ -38,22 +38,33 @@ import requests_mock
         # A DM mentioning shy raccoon, but no other account
         (
             {
+                "id": "postid",
                 "visibility": "direct",
                 "content": "Question pour quelqu'un",
+                "account": {"id": "someone"},
                 "mentions": [{"id": "110108208783335072"}],
             },
-            {"action": "skip", "message": settings.ERROR_INVALID_ACCOUNT.format("")},
+            {
+                "action": "reply",
+                "in_reply_to_id": "postid",
+                "recipient": {"id": "someone"},
+                "message": settings.ERROR_INVALID_ACCOUNT.format(""),
+            },
         ),
         # A DM mentioning shy raccoon, but the other
         # account isn't following shy raccoon
         (
             {
+                "id": "postid",
                 "visibility": "direct",
+                "account": {"id": "someone"},
                 "content": "Question pour ?not_following:",
                 "mentions": [{"id": "110108208783335072"}],
             },
             {
-                "action": "skip",
+                "action": "reply",
+                "in_reply_to_id": "postid",
+                "recipient": {"id": "someone"},
                 "message": settings.SUCCESS_FORWARD_MESSAGE.format("not_following"),
             },
         ),
@@ -61,14 +72,19 @@ import requests_mock
         # so we move forward
         (
             {
+                "id": "postid",
                 "visibility": "direct",
+                "account": {"id": "someone"},
                 "content": "for ?following : \nSome content\n",
                 "spoiler_text": "A content warning",
                 "mentions": [{"id": "110108208783335072"}],
             },
             {
                 "action": "forward",
+                "sender": {"id": "someone"},
+                "recipient": {"id": "following", "acct": "following"},
                 "content": "Some content",
+                "in_reply_to_id": "postid",
                 "spoiler_text": f"{settings.DEFAULT_CONTENT_WARNING} | A content warning",
             },
         ),
@@ -90,11 +106,11 @@ def test_handle_message(payload, expected, requests_mock):
     )
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/lookup?acct=not_following",
-        json={"id": "not_following"},
+        json={"id": "not_following", "acct": "not_following"},
     )
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/lookup?acct=following",
-        json={"id": "following"},
+        json={"id": "following", "acct": "following"},
     )
 
     assert (
@@ -119,3 +135,80 @@ def test_handle_message(payload, expected, requests_mock):
 )
 def test_prepare_for_forward(content, expected):
     assert main.prepare_for_forward(content, "?toto") == expected
+
+
+def test_handle_skip():
+    main.handle_skip({"action": "skip"})
+
+
+def test_handle_notification_follow(requests_mock):
+    requests_mock.post(f"{settings.SERVER_URL}/api/v1/statuses", json={})
+    main.handle_follow(
+        {
+            "action": "follow",
+            "sender": {"acct": "hello@world"},
+            "bot_data": {"acct": "shyraccoon"},
+        }
+    )
+
+    request = requests_mock.request_history[0]
+
+    message = settings.FOLLOW_MESSAGE.format(
+        bot_account="shyraccoon",
+        recipient="hello@world",
+    )
+    assert request.json() == {
+        "status": f"@hello@world {message}",
+        "visibility": "direct",
+    }
+
+
+def test_handle_reply(requests_mock):
+    requests_mock.post(f"{settings.SERVER_URL}/api/v1/statuses", json={})
+
+    main.handle_reply(
+        {
+            "action": "reply",
+            "message": "hello",
+            "recipient": {"acct": "hello@world"},
+            "in_reply_to_id": "previous",
+        }
+    )
+
+    request = requests_mock.request_history[0]
+
+    assert request.json() == {
+        "status": f"@hello@world hello",
+        "visibility": "direct",
+        "in_reply_to_id": "previous",
+    }
+
+
+def test_handle_forward(requests_mock):
+    requests_mock.post(f"{settings.SERVER_URL}/api/v1/statuses", json={})
+
+    main.handle_forward(
+        {
+            "action": "forward",
+            "spoiler_text": "cw",
+            "message": "hello",
+            "sender": {"acct": "sender@world"},
+            "recipient": {"acct": "recipient@world"},
+            "in_reply_to_id": "previous",
+        }
+    )
+
+    forward = requests_mock.request_history[0]
+    confirmation = requests_mock.request_history[1]
+
+    assert forward.json() == {
+        "status": f"@recipient@world hello",
+        "visibility": "direct",
+        "spoiler_text": "cw",
+        "in_reply_to_id": "previous",
+    }
+    assert confirmation.json() == {
+        "status": f"@sender@world {settings.SUCCESS_FORWARD_MESSAGE.format('recipient@world')}",
+        "visibility": "direct",
+        "in_reply_to_id": "previous",
+    }
