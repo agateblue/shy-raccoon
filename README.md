@@ -14,7 +14,8 @@ A Mastodon bot to forward anonymous messages to their recipient, *à la* Curious
 # Safety features
 
 - Shy Raccoon is opt-in based: you need to follow the bot to start receiving anonymous messages
-- To be implemented : If you receive an abusive or hateful question, simply answer the bot a message that contain the hashtag "#report" (this is configurable). A human will take over to ensure this person can't reach you again, as well as reporting them if necessary.
+- Messages are rate-limited and a given user won't be able to send more than a couple dozen messages a day by default
+- If you receive an abusive or hateful question, simply answer the bot a message that contain the hashtag "#report" (this is configurable). A human will take over to ensure this person can't reach you again, as well as reporting them if necessary.
 
 # Hosting your own Shy Raccoon
 
