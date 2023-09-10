@@ -78,7 +78,7 @@ FORWARD_INSTRUCTIONS_MESSAGE = os.environ.get(
 
 The important parts are:
 
-1. The question mark at the beginning of the recipient username (instead of an @). THIS IS IMPORTANT TO AVOID you don't mention the person directly!
+1. THE QUESTION MARK AT THE BEGINNING OF THE RECIPIENT USERNAME (INSTEAD OF AN @). THIS IS IMPORTANT TO AVOID YOU DON'T MENTION THE PERSON DIRECTLY!
 2. A line break before your question
 """,
 )
