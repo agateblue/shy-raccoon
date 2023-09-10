@@ -14,6 +14,10 @@ def cli():
 
 @cli.command
 def stream():
+    if settings.DRY_RUN:
+        click.echo(
+            "Starting in DRY_RUN mode, no data will be modified, no statuses will be posted."
+        )
     click.echo("Getting user info…")
     user_data = main.get_data(
         server_url=settings.SERVER_URL,

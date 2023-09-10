@@ -1,0 +1,15 @@
+[Unit]
+Description=Shy Raccoon Mastodon bot
+
+StartLimitIntervalSec=500
+StartLimitBurst=5
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+# Edit with your own shy-raccoon path
+EnvironmentFile=/home/youruser/shy-raccoon/.env
+ExecStart=/home/youruser/shy-raccoon/venv/bin/shy-raccoon run
+
+[Install]
+WantedBy=multi-user.target

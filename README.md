@@ -31,6 +31,63 @@ With the following scopes :
 - write:bookmarks (to bookmark reported statuses)
 - push
 
+Grab the access token for later.
+
+## Get the code
+
+```bash
+cd ~
+git clone https://github.com/agateblue/shy-raccoon.git
+cd shy-raccoon
+
+# create a python virtualenv
+python3 -m venv venv
+
+# install the project and its dependencies
+venv/bin/pip install '.'
+```
+
+## Configuration file
+
+Configuration is done through environment variables. In a production environment, we use an `.env` file to store them.
+
+```bash
+cp env.sample .env
+
+# Add necessary values
+nano .env
+```
+
+## Systemd unit
+
+To ensure the bot is started automatically with the system and restarted in case of a crash, we recommand using systemd. 
+
+```bash
+sudo cp shy-raccoon.service /etc/systemd/system/
+
+# Tweak the unit as needed, especially the path to your shy-raccoon install
+sudo nano /etc/systemd/system/shy-raccoon.service
+
+# Reload the configuration
+sudo systemctl daemon-reload
+sudo systemctl enable shy-raccoon.service
+sudo systemctl start shy-raccoon.service
+```
+
+## Upgrading
+
+If you want to run an updated version of the code:
+
+```bash
+cd ~/shy-raccoon
+# pull changes from the repo
+git pull
+# reinstall the project and its dependencies
+venv/bin/pip install '.'
+# restart the service
+sudo systemctl restart shy-raccoon.service
+```
+
 # Contribute to the project
 
 Initial setup :
