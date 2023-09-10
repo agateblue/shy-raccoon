@@ -123,6 +123,9 @@ def handle_message(
             if reported_message["account"]["id"] != bot_data["id"]:
                 return SKIP
 
+            if not reported_message.get("in_reply_to_account_id"):
+                return SKIP
+
             reported_message_author = get_data(
                 server_url,
                 f"/api/v1/accounts/{reported_message['in_reply_to_account_id']}",

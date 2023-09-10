@@ -9,7 +9,7 @@ Restart=on-failure
 RestartSec=5s
 # Edit with your own shy-raccoon path
 EnvironmentFile=/home/youruser/shy-raccoon/.env
-ExecStart=/home/youruser/shy-raccoon/venv/bin/shy-raccoon run
+ExecStart=/home/youruser/shy-raccoon/venv/bin/shy-raccoon stream
 
 [Install]
 WantedBy=multi-user.target
