@@ -2,7 +2,7 @@ import json
 import logging
 
 import requests
-
+import websockets.sync.client
 from . import settings
 
 
@@ -38,37 +38,18 @@ def post_data(server_url, path, access_token, data):
 def start_stream(server_url, streaming_url, access_token):
     s = requests.Session()
     url = f"{server_url}{streaming_url}"
-
-    headers = {
-        "connection": "keep-alive",
-        "content-type": "application/json",
-        "transfer-encoding": "chunked",
-        "authorization": f"Bearer {access_token}",
-    }
-
-    req = requests.Request("GET", url, headers=headers).prepare()
-
-    logging.info("Starting stream on %s%s", server_url, streaming_url)
-    resp = s.send(req, stream=True)
-    resp.raise_for_status()
-    event_type = None
-
-    for line in resp.iter_lines():
-        logging.debug("Received line: %s", line)
-        line = line.decode("UTF-8")
-
-        key = "event: "
-        if key in line:
-            line = line.replace(key, "")
-            event_type = line
-
-        key = "data: "
-        if key in line:
-            line = line.replace(key, "")
-            data = dict()
-            data["event"] = event_type
-            data["data"] = json.loads(line)
-            yield data
+    url = url.replace("http://", "ws://")
+    url = url.replace("https://", "wss://")
+    url += "?stream=user"
+    headers = {"authorization": f"Bearer {access_token}"}
+    logging.info("[WS] Connecting on %s…", url)
+    with websockets.sync.client.connect(url, additional_headers=headers) as websocket:
+        logging.info("[WS] Connected!")
+        while True:
+            message = websocket.recv()
+            message = json.loads(message)
+            logging.debug(f"[WS] Received: %s", message)
+            yield {"event": message["event"], "data": json.loads(message["payload"])}
 
 
 SKIP = {"action": "skip"}
