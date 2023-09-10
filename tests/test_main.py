@@ -3,6 +3,12 @@ from shyraccoon import main, settings
 
 import requests_mock
 
+bot_data = {
+    "id": "110108208783335072",
+    "username": "ShyRaccoon",
+    "acct": "ShyRaccoon",
+}
+
 
 @pytest.mark.parametrize(
     "payload, expected",
@@ -16,7 +22,7 @@ import requests_mock
             {
                 "visibility": "direct",
                 "mentions": [
-                    {"id": "110108208783335072"},
+                    {"id": bot_data["id"]},
                     {"id": "another"},
                 ],
             },
@@ -27,10 +33,10 @@ import requests_mock
             {
                 "visibility": "direct",
                 "account": {
-                    "id": "110108208783335072",
+                    "id": bot_data["id"],
                 },
                 "mentions": [
-                    {"id": "110108208783335072"},
+                    {"id": bot_data["id"]},
                 ],
             },
             main.SKIP,
@@ -42,7 +48,7 @@ import requests_mock
                 "visibility": "direct",
                 "content": "Question pour quelqu'un",
                 "account": {"id": "someone"},
-                "mentions": [{"id": "110108208783335072"}],
+                "mentions": [{"id": bot_data["id"]}],
             },
             {
                 "action": "reply",
@@ -63,7 +69,7 @@ import requests_mock
                 "visibility": "direct",
                 "account": {"id": "someone"},
                 "content": "Question pour ?not_following:",
-                "mentions": [{"id": "110108208783335072"}],
+                "mentions": [{"id": bot_data["id"]}],
             },
             {
                 "action": "reply",
@@ -81,7 +87,7 @@ import requests_mock
                 "account": {"id": "someone"},
                 "content": """<p><span class="h-card"><a href="https://server/@ShyRaccoon" class="u-url mention" rel="nofollow noopener noreferrer" target="_blank">@<span>ShyRaccoon</span></a></span> this is a question for ?following:</p><p>How old are you?</p>""",
                 "spoiler_text": "A content warning",
-                "mentions": [{"id": "110108208783335072"}],
+                "mentions": [{"id": bot_data["id"]}],
             },
             {
                 "action": "forward",
@@ -92,14 +98,85 @@ import requests_mock
                 "spoiler_text": f"{settings.DEFAULT_CONTENT_WARNING} | A content warning",
             },
         ),
+        # A report message, but no reply_to_id
+        # so we skip
+        (
+            {
+                "id": "postid",
+                "visibility": "direct",
+                "account": {"id": "someone"},
+                "content": """noop""",
+                "tags": [{"name": "report", "url": "https://server.test/tags/report"}],
+                "mentions": [{"id": bot_data["id"]}],
+            },
+            {
+                "action": "skip",
+            },
+        ),
+        # A report message, but the message author isn't the bot
+        # so we skip
+        (
+            {
+                "id": "postid",
+                "visibility": "direct",
+                "account": {"id": "someone"},
+                "in_reply_to_id": "somerandompost",
+                "content": """noop""",
+                "tags": [{"name": "report", "url": "https://server.test/tags/report"}],
+                "mentions": [{"id": bot_data["id"]}],
+            },
+            {
+                "action": "skip",
+            },
+        ),
+        # A report message, with proper reported id (from the bot)
+        (
+            {
+                "id": "postid",
+                "visibility": "direct",
+                "account": {"id": "someone"},
+                "in_reply_to_id": "someshyraccoonpost",
+                "content": """noop""",
+                "tags": [{"name": "report", "url": "https://server.test/tags/report"}],
+                "mentions": [{"id": bot_data["id"]}],
+            },
+            {
+                "action": "report",
+                "anonymous_sender": {"id": "not_following"},
+                "sender": {"id": "someone"},
+                "report": {
+                    "id": "postid",
+                    "visibility": "direct",
+                    "account": {"id": "someone"},
+                    "in_reply_to_id": "someshyraccoonpost",
+                    "content": """noop""",
+                    "tags": [
+                        {"name": "report", "url": "https://server.test/tags/report"}
+                    ],
+                    "mentions": [{"id": bot_data["id"]}],
+                },
+                "reported_message": {
+                    "id": "someshyraccoonpost",
+                    "in_reply_to_account_id": "not_following",
+                    "account": {"id": bot_data["id"]},
+                },
+            },
+        ),
     ],
 )
 def test_handle_message(payload, expected, requests_mock):
-    bot_data = {
-        "id": "110108208783335072",
-        "username": "ShyRaccoon",
-        "acct": "ShyRaccoon",
-    }
+    requests_mock.get(
+        f"{settings.SERVER_URL}/api/v1/statuses/someshyraccoonpost",
+        json={
+            "id": "someshyraccoonpost",
+            "account": {"id": bot_data["id"]},
+            "in_reply_to_account_id": "not_following",
+        },
+    )
+    requests_mock.get(
+        f"{settings.SERVER_URL}/api/v1/statuses/somerandompost",
+        json={"account": {"id": "randomuser"}},
+    )
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/relationships?id[]=not_following",
         json=[{"followed_by": False}],
@@ -115,6 +192,10 @@ def test_handle_message(payload, expected, requests_mock):
     requests_mock.get(
         f"{settings.SERVER_URL}/api/v1/accounts/lookup?acct=following",
         json={"id": "following", "acct": "following"},
+    )
+    requests_mock.get(
+        f"{settings.SERVER_URL}/api/v1/accounts/not_following",
+        json={"id": "not_following"},
     )
 
     assert (
@@ -205,7 +286,10 @@ def test_handle_forward(requests_mock):
     forward = requests_mock.request_history[0]
     confirmation = requests_mock.request_history[1]
 
-    forward_message = settings.FORWARD_MESSAGE.format(message="hello")
+    forward_message = settings.FORWARD_MESSAGE.format(
+        message="hello",
+        report_hashtags=", ".join(f"#\\{t}" for t in settings.REPORT_HASHTAGS),
+    )
     assert forward.json() == {
         "status": f"@recipient@world {forward_message}",
         "visibility": "direct",
@@ -216,4 +300,60 @@ def test_handle_forward(requests_mock):
         "status": f"@sender@world {settings.SUCCESS_FORWARD_MESSAGE.format('recipient@world')}",
         "visibility": "direct",
         "in_reply_to_id": "previous",
+    }
+
+
+def test_handle_report(requests_mock):
+    payload = {
+        "action": "report",
+        "anonymous_sender": {
+            "acct": "anonymous_sender",
+            "url": "https://anonymous.test",
+        },
+        "sender": {"acct": "sender"},
+        "report": {"id": "reportid"},
+        "reported_message": {
+            "id": "reportedpost",
+            "url": "http://url.test/reported",
+        },
+    }
+    requests_mock.post(
+        f"{settings.SERVER_URL}/api/v1/statuses/reportedpost/bookmark", json={}
+    )
+    requests_mock.post(
+        f"{settings.SERVER_URL}/api/v1/statuses/resultid/bookmark", json={}
+    )
+    requests_mock.post(
+        f"{settings.SERVER_URL}/api/v1/statuses", json={"id": "resultid"}
+    )
+    main.handle_report(payload)
+
+    reported_bookmark = requests_mock.request_history[0]
+    mod_notification = requests_mock.request_history[1]
+    mod_notification_bookmark = requests_mock.request_history[2]
+    sender_reply = requests_mock.request_history[3]
+    sender_reply_bookmark = requests_mock.request_history[4]
+
+    # all posts related to moderation/reports should be bookmarked
+    # to avoid deletion
+    assert reported_bookmark.path == "/api/v1/statuses/reportedpost/bookmark"
+    assert mod_notification_bookmark.path == "/api/v1/statuses/resultid/bookmark"
+    assert sender_reply_bookmark.path == "/api/v1/statuses/resultid/bookmark"
+
+    mod_message = settings.REPORT_MOD_MESSAGE.format(
+        sender="sender",
+        reported_message_url="http://url.test/reported",
+        anonymous_sender="anonymous_sender",
+        anonymous_sender_url="https://anonymous.test",
+    )
+    mods = [f"@{m}" for m in settings.MODERATORS_USERNAMES]
+    assert mod_notification.json() == {
+        "status": f"{' '.join(mods)} {mod_message}",
+        "visibility": "direct",
+        "in_reply_to_id": "reportid",
+    }
+    assert sender_reply.json() == {
+        "status": f"@sender {settings.REPORT_CONFIRMATION_MESSAGE.format(mods=', '.join(settings.MODERATORS_USERNAMES))}",
+        "visibility": "direct",
+        "in_reply_to_id": "reportid",
     }

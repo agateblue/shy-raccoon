@@ -8,7 +8,17 @@ DRY_RUN = (os.environ.get("DRY_RUN") or None) is not None
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
 
+MODERATORS_USERNAMES = [
+    mod.strip() for mod in os.environ["MODERATORS_USERNAMES"].split(",") if mod.strip()
+]
+
 # Copy / wording
+REPORT_HASHTAGS = [
+    tag.lower().strip()
+    for tag in os.environ.get("REPORT_HASHTAGS", "report").split(",")
+    if tag.strip()
+]
+
 MENTION_PLACEHOLDER = os.environ.get("MENTION_PLACEHOLDER", "?")
 EXAMPLE_USERNAME = os.environ.get("EXAMPLE_USERNAME", "user@mastodon.test")
 EXAMPLE_MESSAGE = os.environ.get(
@@ -29,9 +39,9 @@ Now that you follow me, I can forward you anonymous questions and messages. When
     + """
 ---
 
-Give it a try yourself if you want to see how it works!
+Give it a try yourself to see how it works!
 
-If you want to stop receiving anonymous messages, unfollow this account. Check out my bio/pinned posts for more info.
+To stop receiving anonymous messages, unfollow this account. Check out my bio/pinned posts for more info.
 """,
 )
 FORWARD_MESSAGE = os.environ.get(
@@ -40,9 +50,9 @@ FORWARD_MESSAGE = os.environ.get(
 
 ---
 
-If you want to report it, contact UnePorte@eldritch.cafe with a screenshot of the conversation.
+To report it, reply to this message, including any relevant information and one of the following hashtags: {report_hashtags}.
 
-If you don't want to receive anonymous message in the future, please unfollow this account.
+If you don't want to receive anonymous messages in the future, please unfollow this account.
 """,
 )
 DEFAULT_CONTENT_WARNING = os.environ.get(
@@ -76,4 +86,21 @@ ERROR_INVALID_MESSAGE = os.environ.get(
 SUCCESS_FORWARD_MESSAGE = os.environ.get(
     "SUCCESS_FORWARD_MESSAGE",
     "Received! I will forward your message to '{0}' immediatly if they enabled Shy Raccoon.",
+)
+
+REPORT_MOD_MESSAGE = os.environ.get(
+    "REPORT_MOD_MESSAGE",
+    """User '{sender}' has reported a Shy Raccoon message.
+
+Please check the reported message and conversation at {reported_message_url}.
+
+The anonymous message was sent by '{anonymous_sender}' ({anonymous_sender_url}).
+
+#ShyRaccoonReport""",
+)
+REPORT_CONFIRMATION_MESSAGE = os.environ.get(
+    "REPORT_CONFIRMATION_MESSAGE",
+    """We have received your report, we'll contact you to let you know the actions that have been taken.
+
+If you need to contact a moderator directly, please reach out in private with {mods}""",
 )

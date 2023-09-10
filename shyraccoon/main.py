@@ -83,6 +83,40 @@ def handle_message(
     if payload["visibility"] != "direct":
         return SKIP
 
+    tags = payload.get("tags", []) or []
+
+    for tag in tags:
+        if tag["name"].lower() in settings.REPORT_HASHTAGS:
+            # this is a report, we check that the reported message is
+            # from us
+            reported_id = payload.get("in_reply_to_id")
+            if not reported_id:
+                return SKIP
+            try:
+                reported_message = get_data(
+                    server_url,
+                    f"/api/v1/statuses/{reported_id}",
+                    access_token=access_token,
+                )
+            except requests.RequestException:
+                return SKIP
+
+            if reported_message["account"]["id"] != bot_data["id"]:
+                return SKIP
+
+            reported_message_author = get_data(
+                server_url,
+                f"/api/v1/accounts/{reported_message['in_reply_to_account_id']}",
+                access_token=access_token,
+            )
+            return {
+                "action": "report",
+                "anonymous_sender": reported_message_author,
+                "sender": payload["account"],
+                "reported_message": reported_message,
+                "report": payload,
+            }
+
     mentions = payload.get("mentions", []) or []
     mentioned = False
 
@@ -219,7 +253,10 @@ def handle_reply(action):
 
 def handle_forward(action):
     # first, forward the message
-    message = settings.FORWARD_MESSAGE.format(message=action["message"])
+    message = settings.FORWARD_MESSAGE.format(
+        message=action["message"],
+        report_hashtags=", ".join(f"#\\{t}" for t in settings.REPORT_HASHTAGS),
+    )
     data = {
         "visibility": "direct",
         "status": f'@{action["recipient"]["acct"]} {message}',
@@ -265,4 +302,69 @@ def handle_follow(action):
         path="/api/v1/statuses",
         access_token=settings.ACCESS_TOKEN,
         data=data,
+    )
+
+
+def handle_report(action):
+    # bookmark the reported message so it doesn't get deleted
+    post_data(
+        server_url=settings.SERVER_URL,
+        path=f"/api/v1/statuses/{action['reported_message']['id']}/bookmark",
+        access_token=settings.ACCESS_TOKEN,
+        data={},
+    )
+
+    # notify the mods
+    mod_message = settings.REPORT_MOD_MESSAGE.format(
+        sender=action["sender"]["acct"],
+        reported_message_url=action["reported_message"]["url"],
+        anonymous_sender=action["anonymous_sender"]["acct"],
+        anonymous_sender_url=action["anonymous_sender"]["url"],
+    )
+    mods = [f"@{mod}" for mod in settings.MODERATORS_USERNAMES]
+
+    data = {
+        "visibility": "direct",
+        "status": f'{" ".join(mods)} {mod_message}',
+        "in_reply_to_id": action["report"]["id"],
+    }
+
+    mod_post = post_data(
+        server_url=settings.SERVER_URL,
+        path="/api/v1/statuses",
+        access_token=settings.ACCESS_TOKEN,
+        data=data,
+    )
+
+    # bookmark the mod message so it isn't deleted
+    post_data(
+        server_url=settings.SERVER_URL,
+        path=f"/api/v1/statuses/{mod_post['id']}/bookmark",
+        access_token=settings.ACCESS_TOKEN,
+        data={},
+    )
+
+    # notify the report author that we have received the message
+    confirmation_message = settings.REPORT_CONFIRMATION_MESSAGE.format(
+        mods=", ".join(settings.MODERATORS_USERNAMES)
+    )
+    data = {
+        "visibility": "direct",
+        "status": f'@{action["sender"]["acct"]} {confirmation_message}',
+        "in_reply_to_id": action["report"]["id"],
+    }
+
+    confirmation_post = post_data(
+        server_url=settings.SERVER_URL,
+        path="/api/v1/statuses",
+        access_token=settings.ACCESS_TOKEN,
+        data=data,
+    )
+
+    # bookmark the confirmation message so it isn't deleted
+    return post_data(
+        server_url=settings.SERVER_URL,
+        path=f"/api/v1/statuses/{confirmation_post['id']}/bookmark",
+        access_token=settings.ACCESS_TOKEN,
+        data={},
     )
