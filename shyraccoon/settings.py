@@ -6,6 +6,14 @@ SERVER_URL = os.environ["SERVER_URL"]  # no final slash
 STREAMING_URL = os.environ.get("STREAMING_URL", "/api/v1/streaming")
 DRY_RUN = (os.environ.get("DRY_RUN") or None) is not None
 
+RATE_LIMIT_USER_RATE = os.environ.get("RATE_LIMIT_USER", "50/day")
+RATE_LIMIT_USER_COUPLE_RATE = os.environ.get("RATE_LIMIT_USER_COUPLE", "10/hour")
+RATE_LIMIT_EXEMPTED_USERS = [
+    user.strip().lower()
+    for user in os.environ.get("RATE_LIMIT_EXEMPTED_USERS", "").split(",")
+    if user.strip()
+]
+
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
 
 MODERATORS_USERNAMES = [

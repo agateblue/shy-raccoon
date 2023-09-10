@@ -67,14 +67,14 @@ bot_data = {
             {
                 "id": "postid",
                 "visibility": "direct",
-                "account": {"id": "someone"},
+                "account": {"id": "someone", "acct": "someone"},
                 "content": "Question pour ?not_following:",
                 "mentions": [{"id": bot_data["id"]}],
             },
             {
                 "action": "reply",
                 "in_reply_to_id": "postid",
-                "recipient": {"id": "someone"},
+                "recipient": {"id": "someone", "acct": "someone"},
                 "message": settings.SUCCESS_FORWARD_MESSAGE.format("not_following"),
             },
         ),
@@ -84,14 +84,14 @@ bot_data = {
             {
                 "id": "postid",
                 "visibility": "direct",
-                "account": {"id": "someone"},
+                "account": {"id": "someone", "acct": "someone"},
                 "content": """<p><span class="h-card"><a href="https://server/@ShyRaccoon" class="u-url mention" rel="nofollow noopener noreferrer" target="_blank">@<span>ShyRaccoon</span></a></span> this is a question for ?following:</p><p>How old are you?</p>""",
                 "spoiler_text": "A content warning",
                 "mentions": [{"id": bot_data["id"]}],
             },
             {
                 "action": "forward",
-                "sender": {"id": "someone"},
+                "sender": {"id": "someone", "acct": "someone"},
                 "recipient": {"id": "following", "acct": "following"},
                 "message": "How old are you?",
                 "in_reply_to_id": "postid",

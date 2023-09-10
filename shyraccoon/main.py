@@ -1,9 +1,28 @@
 import json
 import logging
 
+import limits
 import requests
 import websockets
+
 from . import settings
+
+
+memory_storage = limits.storage.MemoryStorage()
+GLOBAL_LIMITS = limits.parse_many(settings.RATE_LIMIT_USER_RATE)
+COUPLE_LIMITS = limits.parse_many(settings.RATE_LIMIT_USER_COUPLE_RATE)
+LIMITER = limits.strategies.MovingWindowRateLimiter(memory_storage)
+
+
+def pass_limits(sender, recipient):
+    if sender.lower() in settings.RATE_LIMIT_EXEMPTED_USERS:
+        return True
+    global_results = [LIMITER.hit(l, [sender.lower()]) for l in GLOBAL_LIMITS]
+    couple_results = [
+        LIMITER.hit(l, [sender.lower(), (recipient or "*").lower()])
+        for l in COUPLE_LIMITS
+    ]
+    return all(global_results + couple_results)
 
 
 def get_data(server_url, path, access_token):
@@ -181,6 +200,8 @@ def handle_message(
     )[0]
 
     if not relationship["followed_by"]:
+        # trigger a rate limit increase to avoid abuse / checking many accounts
+        pass_limits(payload["account"]["acct"], recipient["acct"])
         return reply(
             settings.SUCCESS_FORWARD_MESSAGE.format(recipient["acct"]),
             recipient=payload["account"],
@@ -203,6 +224,12 @@ def handle_message(
             recipient=payload["account"],
             in_reply_to_id=payload["id"],
         )
+
+    if not pass_limits(payload["account"]["acct"], recipient["acct"]):
+        logging.warning(
+            "[RL] User %s has reached rate limits", payload["account"]["acct"]
+        )
+        return SKIP
 
     return {
         "action": "forward",
