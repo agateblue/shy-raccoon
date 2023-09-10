@@ -2,7 +2,7 @@ import json
 import logging
 
 import requests
-import websockets.sync.client
+import websockets
 from . import settings
 
 
@@ -35,7 +35,7 @@ def post_data(server_url, path, access_token, data):
     return data
 
 
-def start_stream(server_url, streaming_url, access_token):
+async def start_stream(server_url, streaming_url, access_token, callback):
     s = requests.Session()
     url = f"{server_url}{streaming_url}"
     url = url.replace("http://", "ws://")
@@ -43,13 +43,19 @@ def start_stream(server_url, streaming_url, access_token):
     url += "?stream=user"
     headers = {"authorization": f"Bearer {access_token}"}
     logging.info("[WS] Connecting on %s…", url)
-    with websockets.sync.client.connect(url, additional_headers=headers) as websocket:
+    async for websocket in websockets.connect(url, extra_headers=headers):
         logging.info("[WS] Connected!")
         while True:
-            message = websocket.recv()
+            try:
+                message = await websocket.recv()
+            except websockets.ConnectionClosed:
+                logging.info("[WS] Connection closed")
+                break
             message = json.loads(message)
             logging.debug(f"[WS] Received: %s", message)
-            yield {"event": message["event"], "data": json.loads(message["payload"])}
+            callback(
+                {"event": message["event"], "data": json.loads(message["payload"])}
+            )
 
 
 SKIP = {"action": "skip"}

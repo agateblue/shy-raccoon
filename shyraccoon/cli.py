@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import click
@@ -21,12 +22,8 @@ def stream():
     )
     click.echo(f"Logged in as {user_data['url']}")
     click.echo("Starting stream…")
-    s = main.start_stream(
-        server_url=settings.SERVER_URL,
-        streaming_url=settings.STREAMING_URL,
-        access_token=settings.ACCESS_TOKEN,
-    )
-    for event in s:
+
+    def handle_event(event):
         logging.info("Received event: %s", event)
         action = None
         if event["event"] == "notification" and event["data"]["type"] == "follow":
@@ -47,6 +44,15 @@ def stream():
             logging.info("Handling action %s", action)
             handler = getattr(main, f'handle_{action["action"]}')
             handler(action)
+
+    asyncio.run(
+        main.start_stream(
+            server_url=settings.SERVER_URL,
+            streaming_url=settings.STREAMING_URL,
+            access_token=settings.ACCESS_TOKEN,
+            callback=handle_event,
+        )
+    )
 
 
 if __name__ == "__main__":
