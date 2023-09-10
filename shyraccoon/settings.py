@@ -3,7 +3,8 @@ import logging
 
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 SERVER_URL = os.environ["SERVER_URL"]  # no final slash
-STREAMING_URL = os.environ.get("STREAMING_URL", "/api/v1/streaming/direct")
+STREAMING_URL = os.environ.get("STREAMING_URL", "/api/v1/streaming/user")
+DRY_RUN = os.environ.get("DRY_RUN") is not None
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
 
@@ -34,7 +35,7 @@ FORWARD_MESSAGE = os.environ.get(
 
 ---
 
-If you want to report it, simply reply to this message including a #report hashtag in your reply.
+If you want to report it, contact UnePorte@eldritch.cafe with a screenshot of the conversation.
 
 If you don't want to receive anonymous message in the future, please unfollow this account.
 """,

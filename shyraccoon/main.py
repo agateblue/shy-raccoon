@@ -25,6 +25,9 @@ def post_data(server_url, path, access_token, data):
     }
     url = f"{server_url}{path}"
     logging.info("POST Requesting %s with data %s…", url, data)
+    if settings.DRY_RUN:
+        logging.info("DRY_RUN is on, not posting anything")
+        return {}
     response = requests.post(url, json=data, headers=headers)
     response.raise_for_status()
     data = response.json()
