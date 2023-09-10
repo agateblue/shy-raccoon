@@ -32,8 +32,7 @@ def stream():
                 "sender": event["data"]["account"],
                 "bot_data": user_data,
             }
-            main.handle_follow(action)
-        if event["event"] == "notification" and event["data"]["type"] == "mention":
+        elif event["event"] == "notification" and event["data"]["type"] == "mention":
             action = main.handle_message(
                 event["data"]["status"],
                 bot_data=user_data,

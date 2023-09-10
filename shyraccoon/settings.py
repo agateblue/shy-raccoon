@@ -4,7 +4,7 @@ import logging
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 SERVER_URL = os.environ["SERVER_URL"]  # no final slash
 STREAMING_URL = os.environ.get("STREAMING_URL", "/api/v1/streaming")
-DRY_RUN = os.environ.get("DRY_RUN") is not None
+DRY_RUN = (os.environ.get("DRY_RUN") or None) is not None
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
 
