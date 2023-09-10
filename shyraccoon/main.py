@@ -11,7 +11,7 @@ def get_data(server_url, path, access_token):
         "authorization": f"Bearer {access_token}",
     }
     url = f"{server_url}{path}"
-    logging.info("GET Requesting %s…", url)
+    logging.debug("GET Requesting %s…", url)
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     data = response.json()
@@ -24,7 +24,7 @@ def post_data(server_url, path, access_token, data):
         "authorization": f"Bearer {access_token}",
     }
     url = f"{server_url}{path}"
-    logging.info("POST Requesting %s with data %s…", url, data)
+    logging.debug("POST Requesting %s with data %s…", url, data)
     if settings.DRY_RUN:
         logging.info("DRY_RUN is on, not posting anything")
         return {}
@@ -76,14 +76,15 @@ def handle_message(
     server_url,
     access_token,
 ):
+    account_data = payload.get("account", {})
+    if account_data.get("id") == bot_data["id"]:
+        return SKIP
+
     if payload["visibility"] != "direct":
         return SKIP
 
     mentions = payload.get("mentions", []) or []
     mentioned = False
-    account_data = payload.get("account", {})
-    if account_data.get("id") == bot_data["id"]:
-        return SKIP
 
     if len(mentions) != 1:
         return SKIP
@@ -113,7 +114,11 @@ def handle_message(
             mentioned_username = clean_username(word)
     if not mentioned_username:
         return reply(
-            settings.ERROR_INVALID_ACCOUNT.format(""),
+            settings.ERROR_INVALID_ACCOUNT.format(
+                account="",
+                bot_account=bot_data["acct"],
+                recipient=settings.EXAMPLE_USERNAME,
+            ),
             recipient=payload["account"],
             in_reply_to_id=payload["id"],
         )
@@ -125,7 +130,11 @@ def handle_message(
         )
     except requests.RequestException:
         return reply(
-            settings.ERROR_INVALID_ACCOUNT.format(mentioned_username),
+            settings.ERROR_INVALID_ACCOUNT.format(
+                account=mentioned_username,
+                bot_account=bot_data["acct"],
+                recipient=settings.EXAMPLE_USERNAME,
+            ),
             recipient=payload["account"],
             in_reply_to_id=payload["id"],
         )
@@ -153,7 +162,10 @@ def handle_message(
 
     if not forwarded_message:
         return reply(
-            settings.ERROR_INVALID_MESSAGE,
+            settings.ERROR_INVALID_MESSAGE.format(
+                bot_account=bot_data["acct"],
+                recipient=settings.EXAMPLE_USERNAME,
+            ),
             recipient=payload["account"],
             in_reply_to_id=payload["id"],
         )

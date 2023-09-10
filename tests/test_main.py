@@ -48,7 +48,11 @@ import requests_mock
                 "action": "reply",
                 "in_reply_to_id": "postid",
                 "recipient": {"id": "someone"},
-                "message": settings.ERROR_INVALID_ACCOUNT.format(""),
+                "message": settings.ERROR_INVALID_ACCOUNT.format(
+                    account="",
+                    bot_account="ShyRaccoon",
+                    recipient=settings.EXAMPLE_USERNAME,
+                ),
             },
         ),
         # A DM mentioning shy raccoon, but the other

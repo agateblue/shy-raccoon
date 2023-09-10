@@ -24,7 +24,7 @@ def stream():
     click.echo("Starting stream…")
 
     def handle_event(event):
-        logging.info("Received event: %s", event)
+        logging.debug("Received event: %s", event)
         action = None
         if event["event"] == "notification" and event["data"]["type"] == "follow":
             action = {
