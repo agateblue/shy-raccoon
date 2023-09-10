@@ -31,9 +31,9 @@ MENTION_PLACEHOLDER = os.environ.get("MENTION_PLACEHOLDER", "?")
 EXAMPLE_USERNAME = os.environ.get("EXAMPLE_USERNAME", "user@mastodon.test")
 EXAMPLE_MESSAGE = os.environ.get(
     "EXAMPLE_MESSAGE",
-    """@{bot_account} this is a question for ?{recipient}:
+    """@{bot_account} for ?{recipient}:
 
-How old are you?""",
+How are you?""",
 )
 FOLLOW_MESSAGE = os.environ.get(
     "FOLLOW_MESSAGE",
