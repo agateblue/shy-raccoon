@@ -19,6 +19,10 @@ logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
 MODERATORS_USERNAMES = [
     mod.strip() for mod in os.environ["MODERATORS_USERNAMES"].split(",") if mod.strip()
 ]
+BOT_HASHTAGS = [
+    tag.strip() for tag in os.environ.get("BOT_HASHTAGS", "").split(",") if tag.strip()
+]
+BOT_HASHTAGS_STR = " ".join(f"#{t}" for t in BOT_HASHTAGS).strip()
 
 # Copy / wording
 REPORT_HASHTAGS = [
@@ -35,26 +39,30 @@ EXAMPLE_MESSAGE = os.environ.get(
 
 How are you?""",
 )
-FOLLOW_MESSAGE = os.environ.get(
-    "FOLLOW_MESSAGE",
-    """Welcome to Shy Raccoon!
+FOLLOW_MESSAGE = (
+    os.environ.get(
+        "FOLLOW_MESSAGE",
+        """Welcome to Shy Raccoon!
 
 Now that you follow me, I can forward you anonymous questions and messages. Whenever someone writes me a direct message like the one below, you will be notified. 
 
 ---
 """
-    + EXAMPLE_MESSAGE
-    + """
+        + EXAMPLE_MESSAGE
+        + """
 ---
 
 Give it a try yourself to see how it works!
 
 To stop receiving anonymous messages, unfollow this account. Check out my bio/pinned posts for more info.
 """,
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
-FORWARD_MESSAGE = os.environ.get(
-    "FORWARD_MESSAGE",
-    """{message}
+FORWARD_MESSAGE = (
+    os.environ.get(
+        "FORWARD_MESSAGE",
+        """{message}
 
 ---
 
@@ -62,18 +70,21 @@ To report it, reply to this message, including any relevant information and one 
 
 If you don't want to receive anonymous messages in the future, please unfollow this account.
 """,
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
 DEFAULT_CONTENT_WARNING = os.environ.get(
     "DEFAULT_CONTENT_WARNING", "You received a Shy Raccoon message"
 )
-FORWARD_INSTRUCTIONS_MESSAGE = os.environ.get(
-    "FORWARD_INSTRUCTIONS_MESSAGE",
-    """To send an anonymous message to someone, please use the following format:
+FORWARD_INSTRUCTIONS_MESSAGE = (
+    os.environ.get(
+        "FORWARD_INSTRUCTIONS_MESSAGE",
+        """To send an anonymous message to someone, please use the following format:
 
 ---
 """
-    + EXAMPLE_MESSAGE
-    + """
+        + EXAMPLE_MESSAGE
+        + """
 ---
 
 The important parts are:
@@ -81,34 +92,51 @@ The important parts are:
 1. THE QUESTION MARK AT THE BEGINNING OF THE RECIPIENT USERNAME (INSTEAD OF AN @). THIS IS IMPORTANT TO ENSURE YOU DON'T MENTION THE PERSON DIRECTLY!
 2. A line break before your question
 """,
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
 
-ERROR_INVALID_ACCOUNT = os.environ.get(
-    "ERROR_INVALID_ACCOUNT",
-    "The account '{account}' does not exist. " + FORWARD_INSTRUCTIONS_MESSAGE,
+ERROR_INVALID_ACCOUNT = (
+    os.environ.get(
+        "ERROR_INVALID_ACCOUNT",
+        "The account '{account}' does not exist. " + FORWARD_INSTRUCTIONS_MESSAGE,
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
-ERROR_INVALID_MESSAGE = os.environ.get(
-    "ERROR_INVALID_MESSAGE",
-    """Your message is invalid. """ + FORWARD_INSTRUCTIONS_MESSAGE,
+ERROR_INVALID_MESSAGE = (
+    os.environ.get(
+        "ERROR_INVALID_MESSAGE",
+        """Your message is invalid. """ + FORWARD_INSTRUCTIONS_MESSAGE,
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
-SUCCESS_FORWARD_MESSAGE = os.environ.get(
-    "SUCCESS_FORWARD_MESSAGE",
-    "Received! I will forward your message to '{0}' immediatly if they enabled Shy Raccoon.",
+SUCCESS_FORWARD_MESSAGE = (
+    os.environ.get(
+        "SUCCESS_FORWARD_MESSAGE",
+        "Received! I will forward your message to '{0}' immediatly if they enabled Shy Raccoon.",
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
 
-REPORT_MOD_MESSAGE = os.environ.get(
-    "REPORT_MOD_MESSAGE",
-    """User '{sender}' has reported a Shy Raccoon message.
+REPORT_MOD_MESSAGE = (
+    os.environ.get(
+        "REPORT_MOD_MESSAGE",
+        """User '{sender}' has reported a Shy Raccoon message.
 
 Please check the reported message and conversation at {reported_message_url}.
 
 The anonymous message was sent by '{anonymous_sender}' ({anonymous_sender_url}).
 
 #ShyRaccoonReport""",
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
-REPORT_CONFIRMATION_MESSAGE = os.environ.get(
-    "REPORT_CONFIRMATION_MESSAGE",
-    """We have received your report, we'll contact you to let you know the actions that have been taken.
+REPORT_CONFIRMATION_MESSAGE = (
+    os.environ.get(
+        "REPORT_CONFIRMATION_MESSAGE",
+        """We have received your report, we'll contact you to let you know the actions that have been taken.
 
 If you need to contact a moderator directly, please reach out in private with {mods}""",
+    )
+    + f" {BOT_HASHTAGS_STR}"
 )
